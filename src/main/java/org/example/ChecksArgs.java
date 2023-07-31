@@ -8,7 +8,13 @@ public class ChecksArgs {
     private static List<String> tempArgs = new ArrayList<>();
     private static int index = -1;
 
-    private static boolean isCorr = true;
+    private static boolean isCorrTypeAndSort = false;
+
+    private static boolean isCorrCounterParameters = false;
+
+    private static boolean isCorrFileOut = false;
+
+    private static boolean isCorrFilesIn = false;
 
     private static String tempLine = "";
 
@@ -16,107 +22,88 @@ public class ChecksArgs {
         Scanner scanner = new Scanner(System.in);
         tempArgs.addAll(Arrays.stream(args).distinct().toList());
 
-        List<String> tempArgsInputFiles = new ArrayList<>();
 
-        checkDuplicates(args);//проверка дубликатов и индексов для первых двух параметров (режим сортировки и тип данных)
+
+        counterArgs();
+
 
         // проверка количества аргументов
 
-        if (args.length < 2) {
-            while (args.length < 3) {
-                System.out.println("Количество аргументов меньше 3\n");
-                args = inputArgs();
-                checkDuplicates(args);
-                checkTypeDataAndSort(args);
-            }
-        } else {
-            args = checkTypeDataAndSort(args);
-        }
 
-        while (true) {
-            checkOutputFile(args);
-            if (isCorr) {
-                break;
-            }
-            System.out.println("Введите новое имя выходного файла (с расширением .txt)\n");
-            tempLine = scanner.nextLine();
-            args[index + 1] = tempLine;
-        }
-
-        while (true) {
-            args = checkInputFiles(args);
-            if (isCorr) {
-                break;
-            }
-            System.out.println("Введите новые имена входных файлов(с/без расширения .txt) через пробел\n");
-            Collections.addAll(tempArgsInputFiles, args);
-            tempArgsInputFiles.addAll(Arrays.stream(scanner.nextLine().split(" ")).toList());
-            args = tempArgsInputFiles.stream().distinct().toList().toArray(new String[0]);
-        }
         System.out.println("Окончательный набор параметров: " + Arrays.toString(args)+"\n");
         return args;
     }
-
-    /**
-     * Проверка на дублированные параметры
-     *
-     * @param args - массив аргументов
-     */
-    private static void checkDuplicates(String[] args) {
-
-        //tempArgsD = Arrays.stream(args).distinct().toList();
-        /*args = tempArgsD.stream().distinct().toList().toArray(new String[0]);
-        */
-
-        checkIndexes("-a", "-d", tempArgs);
-        checkIndexes("-s", "-i", tempArgs);
-        /*if(tempArgsD.indexOf("-a") < 2 || tempArgsD.indexOf("-d") < 2) {
-            int indexA = tempArgsD.indexOf("-a");
-            int indexD = tempArgsD.indexOf("-d");
-            if (tempArgsD.get(0).equals("-a")) {
-                tempArgsD.remove("-d");
-            } else if (tempArgsD.get(0).equals("-d")) {
-                tempArgsD.remove("-a");
+    private static void counterArgs(){
+        List<String> tempArgsInputFiles = new ArrayList<>();
+        Scanner scanner = new Scanner(System.in);
+        while(!isCorrCounterParameters) {
+            if (tempArgs.size() < 3) {
+                System.out.println("Неверное количество аргументов");
+                tempArgs = Arrays.stream(scanner.nextLine().split(" ")).distinct().toList();
             } else {
-                System.out.println("Аргумент типа сортировки не найден на первых позициях, автоматически будет выставлен (-а, по возрастанию) ");
-                tempArgsD.remove("-d");
-                tempArgsD.remove("-a");
+                isCorrCounterParameters = true;
             }
-        }*/
+        }
+       checkArguments();
 
-        /*if(tempArgsD.indexOf("-s") < 2 || tempArgsD.indexOf("-i") < 2) {
-            int indexS = tempArgsD.indexOf("-s");
-            int indexI = tempArgsD.indexOf("-i");
-
-            if (indexS > 0 && indexS < indexI) {
-                tempArgsD.remove("-i");
-            } else if (indexI > 0 && indexI < indexS) {
-                tempArgsD.remove("-s");
+        while(!isCorrFileOut) {
+            if(!checkOutputFile()) {
+                    break;
             }
-        } else {
-            System.out.println("Аргумент сортировки находятся не на своих местах");
-            tempArgsD.remove("-i");
-            tempArgsD.remove("-s");
-        }*/
-    }
-
-    private static void checkIndexes(String argOne, String argTwo,List<String> listArg) {
-        if(listArg.indexOf(argOne) < 2 || listArg.indexOf(argTwo) < 2) {
-            int indexOneElem = listArg.indexOf(argOne);
-            int indexTwoElem = listArg.indexOf(argTwo);
-
-            if (indexOneElem > 0 && indexOneElem < indexTwoElem) {
-                listArg.remove(argTwo);
-            } else if (indexTwoElem > 0 && indexTwoElem < indexOneElem) {
-                listArg.remove(argOne);
-            }
-        } else {
-            listArg.remove(argTwo);
-            listArg.remove(argOne);
+            System.out.println("Введите новое имя выходного файла (с расширением .txt)\n");
+            tempLine = scanner.nextLine();
+            tempArgs.set(index + 1, tempLine);
         }
 
+        while (!isCorrFilesIn) {
+            if (checkInputFiles()) {
+                break;
+            }
+            System.out.println("Введите новые имена входных файлов(с/без расширения .txt) через пробел\n");
+            tempArgsInputFiles = Arrays.stream(scanner.nextLine().split(" ")).toList();
+            tempArgs.addAll(tempArgsInputFiles);
+        }
 
-        tempArgs = listArg;
+    }
+
+    private static void checkArguments() {
+        Scanner scanner = new Scanner(System.in);
+        while(!(checkIndexes("-a", "-d") && checkIndexes("-s", "-i"))) {
+            if (index == 1) {
+                System.out.println("Введите параметры режима сортировки (-a или -d) и типа данных (-s или -i)");
+                tempArgs.set(0, scanner.nextLine());
+                tempArgs.set(1, scanner.nextLine());
+            } else {
+                System.out.println("Введите параметр типа данных");
+                tempArgs.set(0, scanner.nextLine());
+            }
+        }
+        isCorrTypeAndSort = true;
+        index = tempArgs.get(1).matches("-([adsi])") ? 1 : 0;
+    }
+
+    private static boolean checkIndexes(String argOne, String argTwo) {
+        if(tempArgs.indexOf(argOne) < 2 || tempArgs.indexOf(argTwo) < 2) {
+            int indexOneElem = tempArgs.indexOf(argOne);
+            int indexTwoElem = tempArgs.indexOf(argTwo);
+
+            if (indexOneElem > 0 && indexOneElem < indexTwoElem) {
+                tempArgs.remove(argTwo);
+                if(indexOneElem > index && indexOneElem < 2) {
+                    index = indexOneElem;
+                }
+            } else if (indexTwoElem > 0 && indexTwoElem < indexOneElem) {
+                tempArgs.remove(argOne);
+                if(indexTwoElem > index && indexTwoElem < 2) {
+                    index = indexTwoElem;
+                }
+            }
+            return true;
+        } else {
+            tempArgs.remove(argTwo);
+            tempArgs.remove(argOne);
+            return false;
+        }
     }
 
     private static String[] checkTypeDataAndSort(String[] args) {
@@ -132,8 +119,7 @@ public class ChecksArgs {
         return args;
     }
 
-    private static String[] checkOutputFile(String[] args) {
-        Collections.addAll(tempArgs, args);
+    private static boolean checkOutputFile() {
         int indexDot = tempArgs.get(index + 1).lastIndexOf(".");
         //проверка выходного файла (на имя и существование)
 
@@ -146,13 +132,12 @@ public class ChecksArgs {
             boolean temp = new File(tempLine + ".txt").isFile();
 
             //Проверка наличия файла после добавления расширения
-            args[index + 1] = tempLine + ".txt";
             tempArgs.set(index + 1, tempLine + ".txt");
             if (!temp) {
                 tempArgs.clear();
                 index++;
-                isCorr = true;
-                return args;
+                isCorrFileOut = true;
+                return true;
             }
         }
 
@@ -167,26 +152,25 @@ public class ChecksArgs {
                 if (!new File(tempLine + "(" + k + ")" + ".txt").isFile()) {
                     System.out.println("Файл с именем " + tempArgs.get(index + 1) +
                             " существует. Новое имя выходного файла " + tempLine + "(" + k + ")" + ".txt\n");
-                    args[index + 1] = tempLine + "(" + k + ")" + ".txt";
+                    tempArgs.set(index + 1, tempLine + "(" + k + ")" + ".txt");
                     tempLine = "";
                     tempArgs.clear();
                     index++;
-                    isCorr = true;
-                    return args;
+                    isCorrFileOut = true;
+                    return false;
                 }
             }
         }  else {
             tempArgs.clear();
             index++;
-            isCorr = true;
-            return args;
+            isCorrFileOut = true;
+            return true;
         }
-        isCorr = false;
-        return args;
+        isCorrFileOut = false;
+        return false;
     }
 
-    private static String[] checkInputFiles(String[] args){
-        Collections.addAll(tempArgs, args);
+    private static boolean checkInputFiles(){
         int sizeList = tempArgs.size();
 
         List<Integer> idElementDelete = new ArrayList<>();
@@ -202,7 +186,6 @@ public class ChecksArgs {
                 boolean temp = new File(tempLine + ".txt").isFile();
                 if (temp) {
                     tempArgs.set(i, tempLine + ".txt");
-                    args[i] = tempLine + ".txt";
                     System.out.println(tempArgs);
                 } else {
                     idElementDelete.add(i);
@@ -220,20 +203,19 @@ public class ChecksArgs {
             for (int z = idElementDelete.size()-1; z >= 0; z--) {
                 tempArgs.remove((int)idElementDelete.get(z));
             }
-            args = tempArgs.toArray(new String[0]);
             idElementDelete.clear();
-            System.out.println("Аргументы после удаления: " + Arrays.toString(args) + "\n");
+            System.out.println("Аргументы после удаления: " + tempArgs.toString() + "\n");
         }
         //остались ли файлы с данными
         if (tempArgs.size() - (index + 2) >= 0){
             tempArgs.clear();
-            isCorr = true;
-            return args;
+            isCorrFilesIn = true;
+            return true;
         }
         //System.out.println(Arrays.toString(args));
-        isCorr = false;
+        isCorrFilesIn = false;
         tempArgs.clear();
-        return args;
+        return false;
     }
 
 
@@ -256,7 +238,7 @@ public class ChecksArgs {
         return args;
     }
 
-    private static void inputReqParameter(Scanner scanner, String tempLine) {
+    /*private static void inputReqParameter(Scanner scanner, String tempLine) {
         boolean isCorrParam = false;
         System.out.println("Отсутствует один из обязательных аргументов -s и -i\n");
         while (!isCorrParam) {
@@ -267,5 +249,5 @@ public class ChecksArgs {
         }
         tempArgs.add(index+1, tempLine);
         index++;
-    }
+    }*/
 }

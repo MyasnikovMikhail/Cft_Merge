@@ -20,7 +20,7 @@ public class Main {
     private static final ExecutorService pool = Executors.newCachedThreadPool();
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
-        System.out.println("Введенные параметры автоматически будут переведы в нижний регистр\n");
+        System.out.println("Введенные параметры автоматически будут переведены в нижний регистр\n");
         args = Arrays.stream(args).map(String::toLowerCase).toList().toArray(new String[0]);
 
         args = checksParameter(args);
