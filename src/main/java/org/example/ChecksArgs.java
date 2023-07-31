@@ -5,7 +5,7 @@ import java.util.*;
 
 public class ChecksArgs {
 
-    private static final List<String> tempArgs = new ArrayList<>();
+    private static List<String> tempArgs = new ArrayList<>();
     private static int index = -1;
 
     private static boolean isCorr = true;
@@ -14,9 +14,11 @@ public class ChecksArgs {
 
     public static String[] checksParameter(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        tempArgs.addAll(Arrays.stream(args).distinct().toList());
+
         List<String> tempArgsInputFiles = new ArrayList<>();
 
-        args = checkDuplicates(args); //проверка дубликатов
+        checkDuplicates(args);//проверка дубликатов и индексов для первых двух параметров (режим сортировки и тип данных)
 
         // проверка количества аргументов
 
@@ -24,15 +26,15 @@ public class ChecksArgs {
             while (args.length < 3) {
                 System.out.println("Количество аргументов меньше 3\n");
                 args = inputArgs();
-                args = checkDuplicates(args);
-                args = checkTypeDataAndSort(args);
+                checkDuplicates(args);
+                checkTypeDataAndSort(args);
             }
         } else {
             args = checkTypeDataAndSort(args);
         }
 
         while (true) {
-            args = checkOutputFile(args);
+            checkOutputFile(args);
             if (isCorr) {
                 break;
             }
@@ -51,7 +53,7 @@ public class ChecksArgs {
             tempArgsInputFiles.addAll(Arrays.stream(scanner.nextLine().split(" ")).toList());
             args = tempArgsInputFiles.stream().distinct().toList().toArray(new String[0]);
         }
-        System.out.println("Окончательный набор парметров: " + Arrays.toString(args)+"\n");
+        System.out.println("Окончательный набор параметров: " + Arrays.toString(args)+"\n");
         return args;
     }
 
@@ -59,60 +61,66 @@ public class ChecksArgs {
      * Проверка на дублированные параметры
      *
      * @param args - массив аргументов
-     * @return массив аргументов без дублирующих значений
      */
-    private static String[] checkDuplicates(String[] args) {
-        List<String> tempArgsD;
-        tempArgsD = Arrays.stream(args).toList();
-        args = tempArgsD.stream().distinct().toList().toArray(new String[0]);
-        //System.out.println(Arrays.toString(args));
-        return args;
+    private static void checkDuplicates(String[] args) {
+
+        //tempArgsD = Arrays.stream(args).distinct().toList();
+        /*args = tempArgsD.stream().distinct().toList().toArray(new String[0]);
+        */
+
+        checkIndexes("-a", "-d", tempArgs);
+        checkIndexes("-s", "-i", tempArgs);
+        /*if(tempArgsD.indexOf("-a") < 2 || tempArgsD.indexOf("-d") < 2) {
+            int indexA = tempArgsD.indexOf("-a");
+            int indexD = tempArgsD.indexOf("-d");
+            if (tempArgsD.get(0).equals("-a")) {
+                tempArgsD.remove("-d");
+            } else if (tempArgsD.get(0).equals("-d")) {
+                tempArgsD.remove("-a");
+            } else {
+                System.out.println("Аргумент типа сортировки не найден на первых позициях, автоматически будет выставлен (-а, по возрастанию) ");
+                tempArgsD.remove("-d");
+                tempArgsD.remove("-a");
+            }
+        }*/
+
+        /*if(tempArgsD.indexOf("-s") < 2 || tempArgsD.indexOf("-i") < 2) {
+            int indexS = tempArgsD.indexOf("-s");
+            int indexI = tempArgsD.indexOf("-i");
+
+            if (indexS > 0 && indexS < indexI) {
+                tempArgsD.remove("-i");
+            } else if (indexI > 0 && indexI < indexS) {
+                tempArgsD.remove("-s");
+            }
+        } else {
+            System.out.println("Аргумент сортировки находятся не на своих местах");
+            tempArgsD.remove("-i");
+            tempArgsD.remove("-s");
+        }*/
+    }
+
+    private static void checkIndexes(String argOne, String argTwo,List<String> listArg) {
+        if(listArg.indexOf(argOne) < 2 || listArg.indexOf(argTwo) < 2) {
+            int indexOneElem = listArg.indexOf(argOne);
+            int indexTwoElem = listArg.indexOf(argTwo);
+
+            if (indexOneElem > 0 && indexOneElem < indexTwoElem) {
+                listArg.remove(argTwo);
+            } else if (indexTwoElem > 0 && indexTwoElem < indexOneElem) {
+                listArg.remove(argOne);
+            }
+        } else {
+            listArg.remove(argTwo);
+            listArg.remove(argOne);
+        }
+
+
+        tempArgs = listArg;
     }
 
     private static String[] checkTypeDataAndSort(String[] args) {
         Collections.addAll(tempArgs, args);
-        Scanner scanner = new Scanner(System.in);
-        String tempLine = "";
-
-        //проверка на одинаковые типы параметров
-        int numType1 = tempArgs.indexOf("-s");
-        int numType2 = tempArgs.indexOf("-i");
-
-        if (numType1 < numType2 && numType1 != -1 && numType2 != -1) {
-            tempArgs.remove(numType2);
-        } else if (numType1 > numType2 && numType1 != -1 && numType2 != -1) {
-            tempArgs.remove(numType1);
-        }
-
-        int numSort1 = tempArgs.indexOf("-a");
-        int numSort2 = tempArgs.indexOf("-d");
-
-        if (numSort1 < numSort2 && numSort1 != -1 && numSort2 != -1) {
-            tempArgs.remove(numSort2);
-        } else if (numSort1 > numType2 && numSort1 != -1 && numSort2 != -1) {
-            tempArgs.remove(numSort1);
-        }
-        if(!tempArgs.get(0).matches("-([ad])") && !tempArgs.get(0).matches("-([si])")) {
-            tempArgs.remove(0);
-
-        }
-        if (tempArgs.get(0).matches("-([ad])")) {
-            index++;
-            if (tempArgs.get(1).matches("-([si])")) {
-                index++;
-            } else {
-                inputReqParameter(scanner, tempLine);
-            }
-        } else if (tempArgs.get(0).matches("-([si])")) {
-            index++;
-            if (tempArgs.get(1).matches("-([ad])")) {
-                index++;
-            }
-        } else {
-            inputReqParameter(scanner, tempLine);
-
-        }
-
         for(int v = tempArgs.size() - 1; v > index; v--) {
             if(tempArgs.get(v).startsWith("-")) {
                 tempArgs.remove(v);
