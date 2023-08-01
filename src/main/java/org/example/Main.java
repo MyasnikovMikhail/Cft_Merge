@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static org.example.CheckTemp.checksParameter2;
 import static org.example.ChecksArgs.checksParameter;
 
 public class Main {
@@ -23,7 +24,7 @@ public class Main {
         System.out.println("Введенные параметры автоматически будут переведены в нижний регистр\n");
         args = Arrays.stream(args).map(String::toLowerCase).toList().toArray(new String[0]);
 
-        args = checksParameter(args);
+        args = checksParameter2(args);
 
         String outputFilename = null;
         List<String> filesToProcess = new LinkedList<>();

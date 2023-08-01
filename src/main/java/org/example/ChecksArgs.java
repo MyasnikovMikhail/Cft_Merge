@@ -5,7 +5,7 @@ import java.util.*;
 
 public class ChecksArgs {
 
-    private static List<String> tempArgs = new ArrayList<>();
+    private static List<String> tempArgs = new ArrayList<>(1);
     private static int index = -1;
 
     private static boolean isCorrTypeAndSort = false;
@@ -20,26 +20,99 @@ public class ChecksArgs {
 
     public static String[] checksParameter(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        tempArgs.addAll(Arrays.stream(args).distinct().toList());
+
+        while(!isCorrCounterParameters) {
+            if (tempArgs.size() < 3) {
+                System.out.println("Неверное количество аргументов");
+                tempArgs.addAll(Arrays.stream(scanner.nextLine().split(" ")).distinct().toList());
+            }
+            indexSortAndType();
+
+
+            isCorrCounterParameters = true;
+
+        }
 
 
 
-        counterArgs();
-
-
-        // проверка количества аргументов
-
-
-        System.out.println("Окончательный набор параметров: " + Arrays.toString(args)+"\n");
+        //counterArgs();
+       // проверка количества аргументов
+        System.out.println("Окончательный набор параметров: " + tempArgs +"\n");
         return args;
     }
-    private static void counterArgs(){
+
+    private static void checkArguments() {
+        Scanner scanner = new Scanner(System.in);
+        //indexSortAndType();
+        while(!checkIndexes("-a", "-d") || !checkIndexes("-s", "-i")) {
+            if (index == 1) {
+                System.out.println("Введите параметры режима сортировки (-a или -d) и типа данных (-s или -i)");
+                tempArgs.set(0, scanner.nextLine());
+                tempArgs.set(1, scanner.nextLine());
+            } else {
+                System.out.println("Введите параметр типа данных");
+                tempArgs.set(0, scanner.nextLine());
+            }
+        }
+        isCorrTypeAndSort = true;
+        //index = tempArgs.get(1).matches("-([adsi])") ? 1 : 0;
+
+    }
+
+    private static boolean checkIndexes(String argOne, String argTwo) {
+        if(tempArgs.indexOf(argOne) < 2 || tempArgs.indexOf(argTwo) < 2) {
+            int indexOneElem = tempArgs.indexOf(argOne);
+            int indexTwoElem = tempArgs.indexOf(argTwo);
+
+            if (indexOneElem > 0 && indexOneElem < indexTwoElem) {
+                tempArgs.remove(argTwo);
+            } else if (indexTwoElem > 0 && indexTwoElem < indexOneElem) {
+                tempArgs.remove(argOne);
+            }
+            return true;
+        } else {
+            tempArgs.remove(argTwo);
+            tempArgs.remove(argOne);
+            return false;
+        }
+    }
+    private static boolean indexSortAndType() {
+        for (int i = 0; i < 3; i++) {
+            if(tempArgs.get(i).matches("-([adsi])")){
+                index = i;
+            } else {
+                checkArguments();
+                i = 0;
+            }
+        }
+        if(index != -1){
+            System.out.println("Введены некорректные параметры режима сортировки (-a или -d) и типа данных (-s или -i)");
+        }
+        checkArguments();
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*private static void counterArgs(){
         List<String> tempArgsInputFiles = new ArrayList<>();
         Scanner scanner = new Scanner(System.in);
         while(!isCorrCounterParameters) {
             if (tempArgs.size() < 3) {
                 System.out.println("Неверное количество аргументов");
-                tempArgs = Arrays.stream(scanner.nextLine().split(" ")).distinct().toList();
+                tempArgs.addAll(Arrays.stream(scanner.nextLine().split(" ")).distinct().toList());
             } else {
                 isCorrCounterParameters = true;
             }
@@ -52,6 +125,7 @@ public class ChecksArgs {
             }
             System.out.println("Введите новое имя выходного файла (с расширением .txt)\n");
             tempLine = scanner.nextLine();
+            tempArgs.remove("-a");
             tempArgs.set(index + 1, tempLine);
         }
 
