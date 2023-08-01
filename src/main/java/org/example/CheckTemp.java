@@ -28,6 +28,7 @@ public class CheckTemp {
         }
         indexSortAndType();
         checkOutputFile();
+        checkInputFiles();
         return args;
     }
 
