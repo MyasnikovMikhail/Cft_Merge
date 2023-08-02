@@ -3,7 +3,7 @@ package org.example;
 import java.io.File;
 import java.util.*;
 
-public class ChecksArgs {
+public class ChecksTemp2 {
 
     private static List<String> tempArgs = new ArrayList<>(1);
     private static int index = -1;
@@ -106,7 +106,7 @@ public class ChecksArgs {
 
 
 
-    /*private static void counterArgs(){
+/*private static void counterArgs(){
         List<String> tempArgsInputFiles = new ArrayList<>();
         Scanner scanner = new Scanner(System.in);
         while(!isCorrCounterParameters) {
