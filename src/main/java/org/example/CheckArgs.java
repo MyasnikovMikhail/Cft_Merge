@@ -3,25 +3,20 @@ package org.example;
 import java.io.File;
 import java.util.*;
 
+import static org.example.Main.checkParameters;
+
 public class CheckArgs {
     private static List<String> tempArgs = new ArrayList<>();
     private static int index = -1;
-
-    private static boolean isCorrTypeAndSort = false;
-
-    private static boolean isCorrCounterParameters = false;
-
-    private static boolean isCorrFileOut = false;
-
-    private static boolean isCorrFilesIn = false;
-
-    private static String tempLine = "";
+        private static String tempLine = "";
 
     public static String[] checksParameter(String[] args) {
         Scanner scanner = new Scanner(System.in);
         tempArgs.addAll(Arrays.stream(args).distinct().toList());
         while(tempArgs.size() < 3) {
+            System.out.println("Введите параметры для запуска программы: ");
             tempArgs.addAll(Arrays.stream(scanner.nextLine().split(" ")).distinct().toList());
+            checkParameters(tempArgs);
         }
         indexSortAndType();
         checkOutputFile();
@@ -81,7 +76,6 @@ public class CheckArgs {
             }else if (!isCorrSecondElem && !isTypeData) {
                 checkInputParameter(1, "-([si])", "Введите параметр типа данных (-s или -i): ");
             } else {
-                isCorrTypeAndSort=true;
                 break;
             }
         }
@@ -140,16 +134,13 @@ public class CheckArgs {
 
         }  else {
             index++;
-            isCorrFileOut = true;
-            return;
         }
-        isCorrFileOut = false;
     }
 
     private static void checkInputFiles(){
         Scanner scanner = new Scanner(System.in);
         int sizeList = tempArgs.size();
-
+        boolean isCorrFilesIn = false;
         List<Integer> idElementDelete = new ArrayList<>();
         while(true) {
             for (int i = index; i < sizeList; i++) {//проверка файлов на существование
@@ -163,6 +154,7 @@ public class CheckArgs {
                     boolean temp = new File(tempLine + ".txt").isFile();
                     if (temp) {
                         tempArgs.set(i, tempLine + ".txt");
+                        isCorrFilesIn = true;
                         //System.out.println(tempArgs);
                     } else {
                         idElementDelete.add(i);
@@ -181,15 +173,15 @@ public class CheckArgs {
                     tempArgs.remove((int) idElementDelete.get(z));
                 }
                 idElementDelete.clear();
-                System.out.println("Аргументы после удаления: " + tempArgs.toString() + "\n");
+                System.out.println("Аргументы после удаления: " + tempArgs + "\n");
             }
             //остались ли файлы с данными
+
             if (tempArgs.size() - (index + 1) > 0) {
                 isCorrFilesIn = true;
                 break;
             }
             //System.out.println(Arrays.toString(args));
-            isCorrFilesIn = false;
 
             if (!isCorrFilesIn) {
                 System.out.println("Некорректно указаны имена входящих файлов. Введите новые, через пробел: ");

@@ -1,6 +1,7 @@
 package org.example;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static java.lang.Thread.sleep;
 import static org.example.CheckArgs.checksParameter;
 
 
@@ -21,9 +23,9 @@ public class Main {
     private static final ExecutorService pool = Executors.newCachedThreadPool();
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
-        System.out.println("Введенные параметры автоматически будут переведены в нижний регистр\n");
-        args = Arrays.stream(args).map(String::toLowerCase).toList().toArray(new String[0]);
-
+        System.out.println("Введенные параметры будут переведены в нижний регистр\n");
+        List<String> argsList = new ArrayList<>(Arrays.stream(args).map(String::toLowerCase).toList());
+        args = checkParameters(argsList).toArray(new String[0]);
         args = checksParameter(args);
 
         String outputFilename = null;
@@ -78,9 +80,9 @@ public class Main {
             for (Future<String> task : tasks) {
                 newFilesToProcess.add(task.get());
             }
-            if(tempFiles.size() != 0) {
+            if (!tempFiles.isEmpty()) {
                 newFilesToProcess.forEach(tempFiles::remove);
-                tempFiles.remove(args[args.length-1]);
+                tempFiles.remove(args[args.length - 1]);
                 deleteTempFiles(tempFiles);
                 tempFiles.clear();
             }
@@ -89,11 +91,31 @@ public class Main {
             filesToProcess = newFilesToProcess;
         }
         pool.shutdown();
-        finishMerge(filesToProcess.get(0), outputFilename);
-        boolean fileTemp = new File(tempFile).delete();
+        for(int attempt = 0; attempt < 3; attempt++) {
+            if(finishMerge(filesToProcess.get(0), outputFilename)) {
+                boolean fileTemp = new File(tempFile).delete();
+                break;
+            } else {
+                sleep(10000);
+            }
+        }
+        /*for (int t = 0; t <= 3; t++) {
+            if (checkFile(filesToProcess.get(0))) {
+                finishMerge(filesToProcess.get(0), outputFilename);
+                boolean fileTemp = new File(tempFile).delete();
+                break;
+            } else {
+                logger.info("Проблема с файлом " + filesToProcess.get(0) + ". Повторная попытка прочтения будет через 10 сек. Всего 3 попытки.");
+                sleep(10000);
+            }
+        }*/
     }
 
-    private static String mergeFilesToTemp(String file1, String file2, boolean isAscending, DataType dataType) {
+    private static boolean checkFile(String nameFile) {
+        return new File(nameFile).isFile();
+    }
+
+    private static String mergeFilesToTemp(String file1, String file2, boolean isAscending, DataType dataType) throws IOException {
         String tempFileName = "temp_" + UUID.randomUUID() + ".txt";
         logger.info("Соединяем: " + file1 + " и " + file2 + " в " + tempFileName);
         try (
@@ -136,6 +158,10 @@ public class Main {
             }
         } catch (FileNotFoundException e) {
             System.err.println("Файл не найден: " + e.getMessage());
+            if(new File(file1).isFile()) {
+                new File(tempFileName).createNewFile();
+                Files.copy(new File(tempFileName).toPath(), new File(file1).toPath());
+            }
         } catch (IOException e) {
             System.err.println("Возникла ошибка при чтении файла: " + e.getMessage());
         }
@@ -181,11 +207,34 @@ public class Main {
         });
     }
 
-    private static void finishMerge(String s, String outputFilename) {
+    private static boolean finishMerge(String s, String outputFilename) throws InterruptedException {
         File result = new File(s);
+        if(!result.isFile() || !result.canWrite()){
+            logger.info("Файл " + result + " отсутствует или невозможно отредактировать");
+        }
         File target = new File(outputFilename);
         boolean success = result.renameTo(target);
-        logger.info("СЛИВАЕМ " + s + " в " + outputFilename + " , удачно:  " + success);
+        if (success) {
+            logger.info("СЛИВАЕМ " + s + " в " + outputFilename + " , удачно:  " + true);
+        } else {
+            sleep(10000);
+            success = result.renameTo(target);
+            logger.info("СЛИВАЕМ " + s + " в " + outputFilename + " , удачно:  " + success);
+        }
+        return success;
+    }
+
+    static List<String> checkParameters(List<String> argsList) {
+        List<Integer> indexArgs = new ArrayList<>();
+        for (int i = 2; i < argsList.size(); i++) {
+            if (argsList.get(i).startsWith("-")) {
+                indexArgs.add(i);
+            }
+        }
+        for (int i = indexArgs.size() - 1; i >= 0; i--) {
+            argsList.remove((int) indexArgs.get(i));
+        }
+        return argsList;
     }
 
     enum DataType {
