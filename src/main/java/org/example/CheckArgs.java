@@ -8,7 +8,7 @@ import static org.example.Main.checkParameters;
 public class CheckArgs {
     private static List<String> tempArgs = new ArrayList<>();
     private static int index = -1;
-        private static String tempLine = "";
+    private static String tempLine = "";
 
     public static String[] checksParameter(String[] args) {
         Scanner scanner = new Scanner(System.in);

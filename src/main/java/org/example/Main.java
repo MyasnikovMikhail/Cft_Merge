@@ -1,7 +1,6 @@
 package org.example;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -91,8 +90,8 @@ public class Main {
             filesToProcess = newFilesToProcess;
         }
         pool.shutdown();
-        for(int attempt = 0; attempt < 3; attempt++) {
-            if(finishMerge(filesToProcess.get(0), outputFilename)) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            if (finishMerge(filesToProcess.get(0), outputFilename)) {
                 boolean fileTemp = new File(tempFile).delete();
                 break;
             } else {
@@ -158,14 +157,31 @@ public class Main {
             }
         } catch (FileNotFoundException e) {
             System.err.println("Файл не найден: " + e.getMessage());
-            if(new File(file1).isFile()) {
-                new File(tempFileName).createNewFile();
-                Files.copy(new File(tempFileName).toPath(), new File(file1).toPath());
-            }
+            String nameFIle = e.getLocalizedMessage().substring(0, e.getLocalizedMessage().indexOf(".txt") + 4);
+            mergeFileToTemp(nameFIle.equals(file1) ? file1 : file2, tempFileName, dataType);
         } catch (IOException e) {
-            System.err.println("Возникла ошибка при чтении файла: " + e.getMessage());
+            System.err.println("Возникла ошибка при работе с файлом: " + e.getMessage());
+            if (!new File(tempFileName).isFile()) {
+                boolean tempFIle = new File(tempFileName).createNewFile();
+            }
         }
         return tempFileName;
+    }
+
+    private static void mergeFileToTemp(String file, String tempFileName, DataType dataType) throws IOException {
+        try (
+                FileReader fileReader = new FileReader(file);
+                FileWriter writer = new FileWriter(tempFileName);
+                BufferedReader br = new BufferedReader(fileReader);
+        ) {
+            String line1 = searchTypeLine(br, dataType);
+            while (line1 != null) {
+                writer.write(line1);
+                line1 = searchTypeLine(br, dataType);
+            }
+        } catch (IOException e) {
+            System.err.println("Возникла ошибка при работе с файлом: " + e.getMessage());
+        }
     }
 
     private static String searchTypeLine(BufferedReader br, DataType dataType) throws IOException {
@@ -209,7 +225,7 @@ public class Main {
 
     private static boolean finishMerge(String s, String outputFilename) throws InterruptedException {
         File result = new File(s);
-        if(!result.isFile() || !result.canWrite()){
+        if (!result.isFile() || !result.canWrite()) {
             logger.info("Файл " + result + " отсутствует или невозможно отредактировать");
         }
         File target = new File(outputFilename);
